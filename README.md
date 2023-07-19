@@ -3,9 +3,12 @@
 ## This project has been deployed on a docker container.
 ### Steps to Run
 ```sh
-docker pull shob4516/hackernews-service:latest
-docker run -p 8080:8080 shob4516/hackernews-service   
+docker pull shob4516/hackernews-service:latest   
 ```
+```sh
+docker run -p 8080:8080 shob4516/hackernews-service
+```
+
 ### Endpoints
 
 | HttpVerb | URL |
@@ -26,10 +29,12 @@ docker run -p 8080:8080 shob4516/hackernews-service
 
 ### Please note that this project uses a redis server (integrated in docker container) to leverage caching.
 
-### Steps to run on local
+### Steps to run on local (Without pulling docker image)
 - Download the redis server on your local machine and make sure it is running on port 6379.
-- Change the "spring.redis.host" property in application.properties and set it to localhost.
+- Change the "spring.redis.host" property in application.properties and set it to localhost. (If not already)
 ```sh
-spring.redis.host=host.docker.internal
+spring.redis.host=localhost
 ```
+- Run mvn springboot:run from the location where pom.xml is present.
+- Run java -jar ./target/hackerNewsService-0.0.1-SNAPSHOT.jar - application will be up and running on localhost:8080
 

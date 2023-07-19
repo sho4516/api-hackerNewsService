@@ -18,6 +18,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static reactor.core.scheduler.Schedulers.parallel;
+
 @Service
 public class StoryItemServiceImpl implements StoryItemService {
 
@@ -38,7 +40,10 @@ public class StoryItemServiceImpl implements StoryItemService {
 
         var topTenStories = hackerNewsServiceClient.getStoryIds()
                 .flatMapMany(Flux::fromIterable)
-                .flatMap(hackerNewsServiceClient::getStoryDetails)
+                .window(3)
+                .flatMap(item -> item.flatMap(
+                       hackerNewsServiceClient::getStoryDetails
+                ).subscribeOn(parallel()))
                 .filter(TimeUtil::isWithinLast15Minutes)
                 .filter(itemDto -> itemDto.getType().equals("story"))
                 .sort(Comparator.comparingInt(ItemDto::getScore).reversed())

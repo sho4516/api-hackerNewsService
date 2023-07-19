@@ -17,6 +17,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static reactor.core.scheduler.Schedulers.parallel;
+
 @Service
 public class CommentServiceImpl implements CommentService {
 
@@ -37,10 +39,12 @@ public class CommentServiceImpl implements CommentService {
                         return Mono.error(new CustomNotFoundException("No comments found on the story id "+storyId , HttpStatus.NOT_FOUND));
                     }
                     return Flux.fromIterable(item.getKids())
-                            .flatMap(hackerNewsServiceClient::getStoryDetails)
+                            .window(3) // Group the comments into separate windows
+                            .flatMap(window -> window.flatMap(hackerNewsServiceClient::getStoryDetails).subscribeOn(parallel()))
                             .filter(child -> child.getType().equals("comment") && !child.isDeleted())
                             .switchIfEmpty(Mono.error(new CustomNotFoundException("All comments deleted for story - "+storyId, HttpStatus.NOT_FOUND)))
-                            .flatMap(child -> getCommentChildCount(child).map(childCount -> Tuples.of(childCount, child)))
+                            .window(3)
+                            .flatMap(window -> window.flatMap(child -> getCommentChildCount(child).map(childCount -> Tuples.of(childCount, child))).subscribeOn(parallel()))
                             .collectSortedList(Comparator.comparingInt(Tuple2::getT1))
                             .map(commentList -> commentList.stream()
                                     .limit(10)
